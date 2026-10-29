@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+
+{% block title %}Member: {{ member.full_name }} | {{ gym_name }}{% endblock %}
+{% block page_title %}Athlete Profile Details{% endblock %}
+
+{% block content %}
+<div class="section-header">
+  <div>
+    <a href="{{ url_for('members_list') }}" class="btn btn-secondary btn-sm" style="margin-bottom: 8px;">&larr; All Members</a>
+    <h2 class="section-title">{{ member.full_name }} ({{ member.member_id }})</h2>
+  </div>
+  <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+    <a href="{{ url_for('member_edit', member_id=member.member_id) }}" class="btn btn-secondary btn-sm">Edit Profile</a>
+    <form method="POST" action="{{ url_for('member_renew', member_id=member.member_id) }}" style="display: inline;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-primary btn-sm">Renew Plan</button>
+    </form>
+    <a href="{{ url_for('payments_record') }}?member_id={{ member.member_id }}" class="btn btn-secondary btn-sm">Collect Payment</a>
+    <a href="{{ url_for('member_delete_confirm', member_id=member.member_id) }}" class="btn btn-danger btn-sm">Delete</a>
+  </div>
+</div>
+
+<div class="profile-grid">
+  <!-- Left Side: Member Card -->
+  <div class="profile-card">
+    <div class="profile-avatar">{{ member.full_name[0]|upper }}</div>
+    <div class="profile-name">{{ member.full_name }}</div>
+    <div class="profile-id">{{ member.member_id }}</div>
+
+    <div>
+      {% if is_active %}
+        <span class="badge badge-active">Active Membership</span>
+      {% else %}
+        <span class="badge badge-expired">Expired Membership</span>
+      {% endif %}
+    </div>
+
+    <ul class="profile-details-list">
+      <li>
+        <span class="label">Plan Enrolled</span>
+        <span class="val"><strong style="color: var(--accent);">{{ member.plan_name }}</strong></span>
+      </li>
+      <li>
+        <span class="label">Plan Fee</span>
+        <span class="val">{{ member.plan_price | format_currency }}</span>
+      </li>
+      <li>
+        <span class="label">Plan Duration</span>
+        <span class="val">{{ member.duration_days }} Days</span>
+      </li>
+      <li>
+        <span class="label">Start Date</span>
+        <span class="val">{{ member.start_date | format_date }}</span>
+      </li>
+      <li>
+        <span class="label">Expiry Date</span>
+        <span class="val">
+          <strong>{{ member.expiry_date | format_date }}</strong>
+          {% if is_active %}
+            <div style="font-size: 0.74rem; color: var(--warning); font-weight: normal;">
+              ({{ days_left }} days remaining)
+            </div>
+          {% else %}
+            <div style="font-size: 0.74rem; color: var(--danger); font-weight: normal;">
+              (Expired {{ days_ago }} days ago)
+            </div>
+          {% endif %}
+        </span>
+      </li>
+      <li>
+        <span class="label">Age / Gender</span>
+        <span class="val">{{ member.age }} yrs / {{ member.gender }}</span>
+      </li>
+      <li>
+        <span class="label">Mobile Phone</span>
+        <span class="val">{{ member.phone }}</span>
+      </li>
+      <li>
+        <span class="label">Email Address</span>
+        <span class="val" style="word-break: break-all;">{{ member.email }}</span>
+      </li>
+      <li>
+        <span class="label">Registered On</span>
+        <span class="val">{{ member.registration_date | format_date }}</span>
+      </li>
+      <li style="flex-direction: column; align-items: flex-start; gap: 4px;">
+        <span class="label">Address</span>
+        <span class="val" style="text-align: left; font-size: 0.82rem; font-weight: normal;">{{ member.address }}</span>
+      </li>
+    </ul>
+  </div>
+
+  <!-- Right Side: History Tabs/Sections -->
+  <div style="display: flex; flex-direction: column; gap: 24px;">
+    <!-- Payments History -->
+    <div class="card" style="margin-bottom: 0;">
+      <div class="card-header">
+        <div>
+          <h3 class="card-title" style="display: flex; align-items: center; gap: 8px;">
+            <span>💳</span> Payment History
+          </h3>
+          <span style="font-size: 0.8rem; color: var(--muted);">Fee collections and billing statements</span>
+        </div>
+        <a href="{{ url_for('payments_record') }}?member_id={{ member.member_id }}" class="btn btn-primary btn-sm">
+          + Record Fee
+        </a>
+      </div>
+
+      {% if payments %}
+        <div class="table-responsive" style="margin-bottom: 0;">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Receipt ID</th>
+                <th>Date</th>
+                <th>Amount</th>
+                <th>Method</th>
+                <th>Status</th>
+                <th style="text-align: right;">Receipt</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for p in payments %}
+                <tr>
+                  <td style="font-family: monospace; font-weight: 600;">{{ p.payment_id }}</td>
+                  <td>{{ p.payment_date | format_date }}</td>
+                  <td><strong>{{ p.amount | format_currency }}</strong></td>
+                  <td>{{ p.payment_method }}</td>
+                  <td>
+                    {% if p.status == 'Paid' %}
+                      <span class="badge badge-paid">Paid</span>
+                    {% else %}
+                      <span class="badge badge-pending">Pending</span>
+                    {% endif %}
+                  </td>
+                  <td style="text-align: right;">
+                    <a href="{{ url_for('payment_receipt', payment_id=p.payment_id) }}" class="btn btn-secondary btn-sm" title="View & Print Receipt">
+                      View Receipt
+                    </a>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty-state">
+          <div class="empty-icon">🧾</div>
+          <div class="empty-title">No Payments Recorded</div>
+          <div class="empty-desc">No fee payments found for this athlete.</div>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Attendance History -->
+    <div class="card" style="margin-bottom: 0;">
+      <div class="card-header">
+        <div>
+          <h3 class="card-title" style="display: flex; align-items: center; gap: 8px;">
+            <span>⏱️</span> Workout Attendance History
+          </h3>
+          <span style="font-size: 0.8rem; color: var(--muted);">Recorded gym check-in sessions</span>
+        </div>
+        <form method="POST" action="{{ url_for('attendance_mark') }}" style="display: inline;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="member_id" value="{{ member.member_id }}">
+          {% if not is_active %}
+            <input type="hidden" name="allow_expired" value="1">
+          {% endif %}
+          <button type="submit" class="btn btn-secondary btn-sm">
+            Check-in Now
+          </button>
+        </form>
+      </div>
+
+      {% if attendance %}
+        <div class="table-responsive" style="margin-bottom: 0;">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Attendance Date</th>
+                <th>Check-in Time (IST)</th>
+                <th>Session Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for a in attendance %}
+                <tr>
+                  <td><strong>{{ a.attendance_date | format_date }}</strong></td>
+                  <td><code style="color: var(--text);">{{ a.check_in_time }}</code></td>
+                  <td><span class="badge badge-active">Completed</span></td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty-state">
+          <div class="empty-icon">🏃</div>
+          <div class="empty-title">No Attendance Recorded</div>
+          <div class="empty-desc">This member has not checked in for any training sessions yet.</div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

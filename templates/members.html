@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block title %}Members Directory | {{ gym_name }}{% endblock %}
+{% block page_title %}Member Management{% endblock %}
+
+{% block content %}
+<div class="section-header">
+  <div>
+    <h2 class="section-title">Enrolled Athletes &amp; Members</h2>
+    <p style="font-size: 0.85rem; color: var(--muted); margin-top: 2px;">
+      Total Matching: <strong style="color: var(--text);">{{ total_count }}</strong> members
+    </p>
+  </div>
+  <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+    <a href="{{ url_for('export_members_csv') }}?q={{ search_query }}&plan={{ selected_plan }}&status={{ selected_status }}" class="btn btn-secondary btn-sm" title="Export current list as CSV">
+      <span>📥 Export CSV</span>
+    </a>
+    <a href="{{ url_for('member_add') }}" class="btn btn-primary btn-sm">
+      <span>➕ Register Member</span>
+    </a>
+  </div>
+</div>
+
+<!-- Search and Filter Form (Pure GET) -->
+<form method="GET" action="{{ url_for('members_list') }}" class="filter-bar">
+  <div class="filter-item" style="flex: 2 1 240px;">
+    <label for="q" class="form-label">Search Members</label>
+    <input 
+      type="text" 
+      id="q" 
+      name="q" 
+      class="form-control" 
+      placeholder="Search by name, ID, phone, email..." 
+      value="{{ search_query }}"
+    >
+  </div>
+
+  <div class="filter-item">
+    <label for="plan" class="form-label">Plan</label>
+    <select id="plan" name="plan" class="form-control">
+      <option value="">All Plans</option>
+      {% for p in plans %}
+        <option value="{{ p.id }}" {% if selected_plan == p.id|string %}selected{% endif %}>
+          {{ p.plan_name }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="filter-item">
+    <label for="status" class="form-label">Status</label>
+    <select id="status" name="status" class="form-control">
+      <option value="">All Statuses</option>
+      <option value="active" {% if selected_status == 'active' %}selected{% endif %}>Active</option>
+      <option value="expired" {% if selected_status == 'expired' %}selected{% endif %}>Expired</option>
+    </select>
+  </div>
+
+  <div class="filter-item">
+    <label for="sort" class="form-label">Sort By</label>
+    <select id="sort" name="sort" class="form-control">
+      <option value="newest" {% if selected_sort == 'newest' %}selected{% endif %}>Newest First</option>
+      <option value="oldest" {% if selected_sort == 'oldest' %}selected{% endif %}>Oldest First</option>
+      <option value="name_asc" {% if selected_sort == 'name_asc' %}selected{% endif %}>Name (A-Z)</option>
+      <option value="name_desc" {% if selected_sort == 'name_desc' %}selected{% endif %}>Name (Z-A)</option>
+      <option value="expiry_asc" {% if selected_sort == 'expiry_asc' %}selected{% endif %}>Expiry (Earliest)</option>
+      <option value="expiry_desc" {% if selected_sort == 'expiry_desc' %}selected{% endif %}>Expiry (Latest)</option>
+    </select>
+  </div>
+
+  <div class="filter-actions">
+    <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+    <a href="{{ url_for('members_list') }}" class="btn btn-secondary btn-sm">Reset</a>
+  </div>
+</form>
+
+<!-- Members Table -->
+{% if members %}
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Athlete Name</th>
+          <th>Age / Gender</th>
+          <th>Phone / Email</th>
+          <th>Plan</th>
+          <th>Expiry Date</th>
+          <th>Status</th>
+          <th style="text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in members %}
+          <tr>
+            <td style="font-family: monospace; font-weight: 700;">
+              <a href="{{ url_for('member_details', member_id=m.member_id) }}">{{ m.member_id }}</a>
+            </td>
+            <td>
+              <a href="{{ url_for('member_details', member_id=m.member_id) }}" style="font-weight: 600; color: #fff;">
+                {{ m.full_name }}
+              </a>
+              <div style="font-size: 0.76rem; color: var(--muted);">Joined: {{ m.registration_date | format_date }}</div>
+            </td>
+            <td>{{ m.age }} yrs / {{ m.gender }}</td>
+            <td>
+              <div>{{ m.phone }}</div>
+              <div style="font-size: 0.76rem; color: var(--muted);">{{ m.email }}</div>
+            </td>
+            <td><span class="badge badge-info">{{ m.plan_name }}</span></td>
+            <td>
+              <strong>{{ m.expiry_date | format_date }}</strong>
+              {% if m.expiry_date >= today_iso and m.days_left is defined and m.days_left <= 7 %}
+                <div style="font-size: 0.72rem; color: var(--warning); font-weight: 600;">
+                  ({{ m.days_left }}d left)
+                </div>
+              {% endif %}
+            </td>
+            <td>
+              {% if m.expiry_date >= today_iso %}
+                <span class="badge badge-active">Active</span>
+              {% else %}
+                <span class="badge badge-expired">Expired</span>
+              {% endif %}
+            </td>
+            <td style="text-align: right;">
+              <div class="table-actions" style="justify-content: flex-end;">
+                <a href="{{ url_for('member_details', member_id=m.member_id) }}" class="btn btn-secondary btn-sm" title="View Details">
+                  View
+                </a>
+                <a href="{{ url_for('member_edit', member_id=m.member_id) }}" class="btn btn-secondary btn-sm" title="Edit Profile">
+                  Edit
+                </a>
+                <form method="POST" action="{{ url_for('member_renew', member_id=m.member_id) }}" style="display: inline;">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="btn btn-primary btn-sm" title="Renew Membership Plan">
+                    Renew
+                  </button>
+                </form>
+                <a href="{{ url_for('member_delete_confirm', member_id=m.member_id) }}" class="btn btn-danger btn-sm" title="Delete Member">
+                  Delete
+                </a>
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination Controls -->
+  {% if total_pages > 1 %}
+    <div class="pagination">
+      <div class="pagination-info">
+        Showing page <strong>{{ current_page }}</strong> of <strong>{{ total_pages }}</strong> ({{ total_count }} total entries)
+      </div>
+      <ul class="pagination-links">
+        <li class="page-item {% if current_page <= 1 %}disabled{% endif %}">
+          <a class="page-link" href="{{ url_for('members_list', page=current_page-1, q=search_query, plan=selected_plan, status=selected_status, sort=selected_sort) }}">
+            &laquo; Prev
+          </a>
+        </li>
+        {% for p in range(1, total_pages + 1) %}
+          {% if p == current_page %}
+            <li class="page-item active"><span class="page-link">{{ p }}</span></li>
+          {% elif p == 1 or p == total_pages or (p >= current_page - 2 and p <= current_page + 2) %}
+            <li class="page-item">
+              <a class="page-link" href="{{ url_for('members_list', page=p, q=search_query, plan=selected_plan, status=selected_status, sort=selected_sort) }}">{{ p }}</a>
+            </li>
+          {% elif p == current_page - 3 or p == current_page + 3 %}
+            <li class="page-item disabled"><span class="page-link">...</span></li>
+          {% endif %}
+        {% endfor %}
+        <li class="page-item {% if current_page >= total_pages %}disabled{% endif %}">
+          <a class="page-link" href="{{ url_for('members_list', page=current_page+1, q=search_query, plan=selected_plan, status=selected_status, sort=selected_sort) }}">
+            Next &raquo;
+          </a>
+        </li>
+      </ul>
+    </div>
+  {% endif %}
+
+{% else %}
+  <div class="card">
+    <div class="empty-state">
+      <div class="empty-icon">🔍</div>
+      <div class="empty-title">No Members Found</div>
+      <div class="empty-desc">No member profiles match your current search query or filter criteria.</div>
+      <a href="{{ url_for('members_list') }}" class="btn btn-secondary btn-sm">Clear Filters</a>
+    </div>
+  </div>
+{% endif %}
+{% endblock %}

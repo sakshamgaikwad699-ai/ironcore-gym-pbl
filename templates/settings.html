@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}System Settings | {{ gym_name }}{% endblock %}
+{% block page_title %}Facility &amp; Security Settings{% endblock %}
+
+{% block content %}
+<div class="section-header">
+  <div>
+    <h2 class="section-title">Administrative Configurations</h2>
+    <p style="font-size: 0.85rem; color: var(--muted); margin-top: 2px;">
+      Manage facility branding, club details, and administrator authentication credentials.
+    </p>
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 24px;">
+  <!-- Section 1: Gym Branding & Facility Details -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">🏢 Facility Branding &amp; Contact</h3>
+      <span style="font-size: 0.8rem; color: var(--muted);">Printed on receipts &amp; reports</span>
+    </div>
+
+    <form method="POST" action="{{ url_for('settings_gym_info') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="form-group">
+        <label for="gym_name" class="form-label">Facility / Gym Name <span class="req">*</span></label>
+        <input 
+          type="text" 
+          id="gym_name" 
+          name="gym_name" 
+          class="form-control" 
+          required 
+          value="{{ settings.get('gym_name', '') }}"
+        >
+      </div>
+
+      <div class="form-group">
+        <label for="gym_tagline" class="form-label">Motto / Tagline <span class="req">*</span></label>
+        <input 
+          type="text" 
+          id="gym_tagline" 
+          name="gym_tagline" 
+          class="form-control" 
+          required 
+          value="{{ settings.get('gym_tagline', '') }}"
+        >
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="gym_phone" class="form-label">Contact Phone <span class="req">*</span></label>
+          <input 
+            type="text" 
+            id="gym_phone" 
+            name="gym_phone" 
+            class="form-control" 
+            required 
+            value="{{ settings.get('gym_phone', '') }}"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="gym_email" class="form-label">Official Email <span class="req">*</span></label>
+          <input 
+            type="email" 
+            id="gym_email" 
+            name="gym_email" 
+            class="form-control" 
+            required 
+            value="{{ settings.get('gym_email', '') }}"
+          >
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="gym_address" class="form-label">Facility Physical Address <span class="req">*</span></label>
+        <textarea 
+          id="gym_address" 
+          name="gym_address" 
+          class="form-control" 
+          rows="2" 
+          required
+        >{{ settings.get('gym_address', '') }}</textarea>
+      </div>
+
+      <div style="margin-top: 24px;">
+        <button type="submit" class="btn btn-primary" style="width: 100%;">
+          Save Facility Settings
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Section 2: Security & Password Management -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">🔐 Administrator Credentials</h3>
+      <span style="font-size: 0.8rem; color: var(--muted);">Werkzeug cryptographic hashing</span>
+    </div>
+
+    <form method="POST" action="{{ url_for('settings_password') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="form-group">
+        <label for="current_password" class="form-label">Current Admin Password <span class="req">*</span></label>
+        <input 
+          type="password" 
+          id="current_password" 
+          name="current_password" 
+          class="form-control" 
+          required 
+          autocomplete="current-password"
+        >
+      </div>
+
+      <div class="form-group">
+        <label for="new_password" class="form-label">New Password (Min 8 Characters) <span class="req">*</span></label>
+        <input 
+          type="password" 
+          id="new_password" 
+          name="new_password" 
+          class="form-control" 
+          minlength="8" 
+          required 
+          autocomplete="new-password"
+        >
+        <div class="form-text">Must be at least 8 characters long for security compliance.</div>
+      </div>
+
+      <div class="form-group">
+        <label for="confirm_password" class="form-label">Confirm New Password <span class="req">*</span></label>
+        <input 
+          type="password" 
+          id="confirm_password" 
+          name="confirm_password" 
+          class="form-control" 
+          minlength="8" 
+          required 
+          autocomplete="new-password"
+        >
+      </div>
+
+      <div style="margin-top: 24px;">
+        <button type="submit" class="btn btn-primary" style="width: 100%;">
+          Update Admin Password
+        </button>
+      </div>
+    </form>
+
+    <div style="margin-top: 20px; padding: 12px; background-color: var(--bg); border-radius: var(--radius-sm); border: 1px solid var(--border); font-size: 0.78rem; color: var(--muted);">
+      🛡️ <strong>Security Notice:</strong> Failed logins are rate-limited to 5 attempts per 10-minute window to thwart automated brute-force attacks.
+    </div>
+  </div>
+</div>
+{% endblock %}

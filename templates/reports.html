@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+
+{% block title %}Operational Reports | {{ gym_name }}{% endblock %}
+{% block page_title %}Operational Analytics &amp; Reports{% endblock %}
+
+{% block content %}
+<div class="section-header">
+  <div>
+    <h2 class="section-title">Club Analytics &amp; Audit Reports</h2>
+    <p style="font-size: 0.85rem; color: var(--muted); margin-top: 2px;">
+      Comprehensive breakdown of membership health, financial collections, and coaching staff.
+    </p>
+  </div>
+  <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+    <a href="{{ url_for('export_members_csv') }}?plan={{ filter_plan }}&status={{ filter_status }}" class="btn btn-secondary btn-sm">
+      📥 Export Members CSV
+    </a>
+    <a href="{{ url_for('export_payments_csv') }}?start_date={{ filter_start_date }}&end_date={{ filter_end_date }}" class="btn btn-secondary btn-sm">
+      📥 Export Payments CSV
+    </a>
+    <a href="{{ url_for('export_attendance_csv') }}" class="btn btn-secondary btn-sm">
+      📥 Export Attendance CSV
+    </a>
+  </div>
+</div>
+
+<div class="print-notice">
+  <span>🖨️ <strong>Print Comprehensive Report:</strong> Press <kbd>Ctrl + P</kbd> to generate an official hardcopy or PDF audit report.</span>
+</div>
+
+<!-- Filter Bar -->
+<form method="GET" action="{{ url_for('reports_view') }}" class="filter-bar">
+  <div class="filter-item">
+    <label for="plan" class="form-label">Filter by Plan</label>
+    <select id="plan" name="plan" class="form-control">
+      <option value="">All Membership Tiers</option>
+      {% for p in plans %}
+        <option value="{{ p.id }}" {% if filter_plan == p.id|string %}selected{% endif %}>
+          {{ p.plan_name }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="filter-item">
+    <label for="status" class="form-label">Membership Status</label>
+    <select id="status" name="status" class="form-control">
+      <option value="">All Statuses</option>
+      <option value="active" {% if filter_status == 'active' %}selected{% endif %}>Active Members Only</option>
+      <option value="expired" {% if filter_status == 'expired' %}selected{% endif %}>Expired Members Only</option>
+    </select>
+  </div>
+
+  <div class="filter-item">
+    <label for="start_date" class="form-label">From Date</label>
+    <input type="date" id="start_date" name="start_date" class="form-control" value="{{ filter_start_date }}">
+  </div>
+
+  <div class="filter-item">
+    <label for="end_date" class="form-label">To Date</label>
+    <input type="date" id="end_date" name="end_date" class="form-control" value="{{ filter_end_date }}">
+  </div>
+
+  <div class="filter-actions">
+    <button type="submit" class="btn btn-primary btn-sm">Run Audit</button>
+    <a href="{{ url_for('reports_view') }}" class="btn btn-secondary btn-sm">Reset</a>
+  </div>
+</form>
+
+<!-- Section 1: Membership Summary -->
+<div class="card">
+  <div class="card-header">
+    <h3 class="card-title">1. Membership Distribution Summary</h3>
+  </div>
+
+  <div class="stats-grid" style="margin-bottom: 0;">
+    <div class="stat-card accent-blue">
+      <div class="stat-header">
+        <span class="stat-label">Total Registered</span>
+        <span class="stat-icon">👥</span>
+      </div>
+      <div class="stat-value">{{ member_summary.total }}</div>
+      <div class="stat-subtext">All time registrations</div>
+    </div>
+
+    <div class="stat-card accent-green">
+      <div class="stat-header">
+        <span class="stat-label">Active Subscriptions</span>
+        <span class="stat-icon">✅</span>
+      </div>
+      <div class="stat-value">{{ member_summary.active }}</div>
+      <div class="stat-subtext">{{ member_summary.active_pct }}% of member base</div>
+    </div>
+
+    <div class="stat-card accent-amber">
+      <div class="stat-header">
+        <span class="stat-label">Expiring ≤ 7 Days</span>
+        <span class="stat-icon">⏳</span>
+      </div>
+      <div class="stat-value">{{ member_summary.expiring_soon }}</div>
+      <div class="stat-subtext">Immediate follow-up required</div>
+    </div>
+
+    <div class="stat-card accent-red">
+      <div class="stat-header">
+        <span class="stat-label">Lapsed / Expired</span>
+        <span class="stat-icon">⚠️</span>
+      </div>
+      <div class="stat-value">{{ member_summary.expired }}</div>
+      <div class="stat-subtext">Requires re-activation</div>
+    </div>
+  </div>
+</div>
+
+<!-- Section 2: Revenue Collections by Month & by Plan -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 24px;">
+  <!-- Revenue by Month -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">2. Revenue Collections by Month</h3>
+      <span style="font-size: 0.8rem; color: var(--muted);">Last 6 Months</span>
+    </div>
+
+    {% if revenue_by_month %}
+      <div class="table-responsive" style="margin-bottom: 0;">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Billing Month</th>
+              <th>Transactions</th>
+              <th style="text-align: right;">Total Collected (INR)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for rm in revenue_by_month %}
+              <tr>
+                <td><strong>{{ rm.month_label }}</strong></td>
+                <td>{{ rm.tx_count }} receipts</td>
+                <td style="text-align: right; font-weight: 700; color: #4ade80;">
+                  {{ rm.total_amount | format_currency }}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <div class="empty-desc">No revenue records recorded in this range.</div>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Revenue by Plan -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">3. Revenue Generated by Plan Tier</h3>
+      <span style="font-size: 0.8rem; color: var(--muted);">Product Tier Performance</span>
+    </div>
+
+    {% if revenue_by_plan %}
+      <div class="table-responsive" style="margin-bottom: 0;">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Plan Tier</th>
+              <th>Enrolled</th>
+              <th style="text-align: right;">Total Generated (INR)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for rp in revenue_by_plan %}
+              <tr>
+                <td><strong>{{ rp.plan_name }}</strong></td>
+                <td>{{ rp.member_count }} athletes</td>
+                <td style="text-align: right; font-weight: 700; color: #4ade80;">
+                  {{ rp.total_revenue | format_currency }}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <div class="empty-desc">No plan revenue found.</div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Section 4: Trainers Staff Roster -->
+<div class="card" style="margin-top: 10px;">
+  <div class="card-header">
+    <h3 class="card-title">4. Coaching Staff &amp; Payroll Summary</h3>
+    <span class="badge badge-info">{{ trainers|length }} Active Coaches</span>
+  </div>
+
+  <div class="table-responsive" style="margin-bottom: 0;">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Trainer ID</th>
+          <th>Full Name</th>
+          <th>Specialization</th>
+          <th>Experience</th>
+          <th>Availability</th>
+          <th style="text-align: right;">Monthly Remuneration</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in trainers %}
+          <tr>
+            <td style="font-family: monospace; font-weight: 700; color: var(--accent);">{{ t.trainer_id }}</td>
+            <td><strong>{{ t.full_name }}</strong></td>
+            <td>{{ t.specialization }}</td>
+            <td>{{ t.experience }} Years</td>
+            <td>
+              {% if t.availability == 'Full-time' %}
+                <span class="badge badge-active">Full-time</span>
+              {% else %}
+                <span class="badge badge-warning">Part-time</span>
+              {% endif %}
+            </td>
+            <td style="text-align: right; font-weight: 700;">{{ t.salary | format_currency }}</td>
+          </tr>
+        {% endfor %}
+        <tr style="background-color: var(--bg-2); font-weight: 800;">
+          <td colspan="5" style="text-align: right; color: var(--text);">Total Monthly Coach Payroll:</td>
+          <td style="text-align: right; color: var(--accent);">{{ total_payroll | format_currency }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

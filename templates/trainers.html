@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+
+{% block title %}Trainers Staff | {{ gym_name }}{% endblock %}
+{% block page_title %}Fitness Trainers &amp; Coaching Staff{% endblock %}
+
+{% block content %}
+<div class="section-header">
+  <div>
+    <h2 class="section-title">Coaches &amp; Personal Trainers</h2>
+    <p style="font-size: 0.85rem; color: var(--muted); margin-top: 2px;">
+      Total Staff: <strong style="color: var(--text);">{{ total_count }}</strong> trainers
+    </p>
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 380px; gap: 24px; align-items: flex-start;">
+  <!-- Left Side: Trainers Table & Search -->
+  <div>
+    <form method="GET" action="{{ url_for('trainers_list') }}" class="filter-bar" style="margin-bottom: 18px;">
+      <div class="filter-item" style="flex: 2 1 200px;">
+        <label for="q" class="form-label">Search Trainers</label>
+        <input 
+          type="text" 
+          id="q" 
+          name="q" 
+          class="form-control" 
+          placeholder="Search by name, specialization, ID..." 
+          value="{{ search_query }}"
+        >
+      </div>
+
+      <div class="filter-actions">
+        <button type="submit" class="btn btn-primary btn-sm">Search</button>
+        <a href="{{ url_for('trainers_list') }}" class="btn btn-secondary btn-sm">Reset</a>
+      </div>
+    </form>
+
+    <div class="card">
+      {% if trainers %}
+        <div class="table-responsive" style="margin-bottom: 0;">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Trainer ID</th>
+                <th>Coach Name</th>
+                <th>Specialization</th>
+                <th>Experience</th>
+                <th>Contact</th>
+                <th>Monthly Salary</th>
+                <th>Status</th>
+                <th style="text-align: right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for t in trainers %}
+                <tr>
+                  <td style="font-family: monospace; font-weight: 700; color: var(--accent);">{{ t.trainer_id }}</td>
+                  <td>
+                    <strong style="color: #fff;">{{ t.full_name }}</strong>
+                  </td>
+                  <td><span class="badge badge-info">{{ t.specialization }}</span></td>
+                  <td>{{ t.experience }} yrs</td>
+                  <td>
+                    <div>{{ t.phone }}</div>
+                    <div style="font-size: 0.74rem; color: var(--muted);">{{ t.email }}</div>
+                  </td>
+                  <td><strong>{{ t.salary | format_currency }}</strong></td>
+                  <td>
+                    {% if t.availability == 'Full-time' %}
+                      <span class="badge badge-active">Full-time</span>
+                    {% else %}
+                      <span class="badge badge-warning">Part-time</span>
+                    {% endif %}
+                  </td>
+                  <td style="text-align: right;">
+                    <div class="table-actions" style="justify-content: flex-end;">
+                      <a href="{{ url_for('trainer_edit', trainer_id=t.trainer_id) }}" class="btn btn-secondary btn-sm" title="Edit Trainer">
+                        Edit
+                      </a>
+                      <a href="{{ url_for('trainer_delete_confirm', trainer_id=t.trainer_id) }}" class="btn btn-danger btn-sm" title="Delete Trainer">
+                        Delete
+                      </a>
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        {% if total_pages > 1 %}
+          <div class="pagination">
+            <div class="pagination-info">Page {{ current_page }} of {{ total_pages }}</div>
+            <ul class="pagination-links">
+              <li class="page-item {% if current_page <= 1 %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('trainers_list', page=current_page-1, q=search_query) }}">&laquo; Prev</a>
+              </li>
+              {% for p in range(1, total_pages + 1) %}
+                <li class="page-item {% if p == current_page %}active{% endif %}">
+                  <a class="page-link" href="{{ url_for('trainers_list', page=p, q=search_query) }}">{{ p }}</a>
+                </li>
+              {% endfor %}
+              <li class="page-item {% if current_page >= total_pages %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('trainers_list', page=current_page+1, q=search_query) }}">Next &raquo;</a>
+              </li>
+            </ul>
+          </div>
+        {% endif %}
+
+      {% else %}
+        <div class="empty-state">
+          <div class="empty-icon">🥊</div>
+          <div class="empty-title">No Trainers Found</div>
+          <div class="empty-desc">No trainer profiles match your query or have been registered yet.</div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Right Side: Add / Edit Trainer Form -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">
+        {% if editing_trainer %}
+          Edit Trainer: {{ editing_trainer.full_name }}
+        {% else %}
+          ➕ Add New Trainer
+        {% endif %}
+      </h3>
+    </div>
+
+    <form method="POST" action="{% if editing_trainer %}{{ url_for('trainer_edit', trainer_id=editing_trainer.trainer_id) }}{% else %}{{ url_for('trainer_add') }}{% endif %}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="form-group">
+        <label for="full_name" class="form-label">Full Name <span class="req">*</span></label>
+        <input 
+          type="text" 
+          id="full_name" 
+          name="full_name" 
+          class="form-control" 
+          placeholder="e.g. Vikram Shinde" 
+          required 
+          value="{% if editing_trainer %}{{ editing_trainer.full_name }}{% else %}{{ form_data.get('full_name', '') }}{% endif %}"
+        >
+      </div>
+
+      <div class="form-group">
+        <label for="specialization" class="form-label">Specialization / Discipline <span class="req">*</span></label>
+        <input 
+          type="text" 
+          id="specialization" 
+          name="specialization" 
+          class="form-control" 
+          placeholder="e.g. CrossFit &amp; Olympic Lifting" 
+          required 
+          value="{% if editing_trainer %}{{ editing_trainer.specialization }}{% else %}{{ form_data.get('specialization', '') }}{% endif %}"
+        >
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="phone" class="form-label">Phone (10 Digits) <span class="req">*</span></label>
+          <input 
+            type="tel" 
+            id="phone" 
+            name="phone" 
+            class="form-control" 
+            pattern="[6-9][0-9]{9}" 
+            placeholder="e.g. 9822100003" 
+            required 
+            value="{% if editing_trainer %}{{ editing_trainer.phone }}{% else %}{{ form_data.get('phone', '') }}{% endif %}"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="email" class="form-label">Email Address <span class="req">*</span></label>
+          <input 
+            type="email" 
+            id="email" 
+            name="email" 
+            class="form-control" 
+            placeholder="e.g. coach@ironcoregym.in" 
+            required 
+            value="{% if editing_trainer %}{{ editing_trainer.email }}{% else %}{{ form_data.get('email', '') }}{% endif %}"
+          >
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="experience" class="form-label">Experience (Years: 0-50) <span class="req">*</span></label>
+          <input 
+            type="number" 
+            id="experience" 
+            name="experience" 
+            class="form-control" 
+            min="0" 
+            max="50" 
+            placeholder="e.g. 5" 
+            required 
+            value="{% if editing_trainer %}{{ editing_trainer.experience }}{% else %}{{ form_data.get('experience', '') }}{% endif %}"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="salary" class="form-label">Monthly Salary (INR ₹) <span class="req">*</span></label>
+          <input 
+            type="number" 
+            id="salary" 
+            name="salary" 
+            class="form-control" 
+            step="0.01" 
+            min="0" 
+            placeholder="e.g. 35000" 
+            required 
+            value="{% if editing_trainer %}{{ editing_trainer.salary }}{% else %}{{ form_data.get('salary', '') }}{% endif %}"
+          >
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="availability" class="form-label">Availability / Schedule <span class="req">*</span></label>
+        <select id="availability" name="availability" class="form-control" required>
+          <option value="Full-time" {% if (editing_trainer and editing_trainer.availability == 'Full-time') or form_data.get('availability') == 'Full-time' %}selected{% endif %}>Full-time</option>
+          <option value="Part-time" {% if (editing_trainer and editing_trainer.availability == 'Part-time') or form_data.get('availability') == 'Part-time' %}selected{% endif %}>Part-time</option>
+        </select>
+      </div>
+
+      <div style="display: flex; gap: 10px; margin-top: 20px;">
+        {% if editing_trainer %}
+          <a href="{{ url_for('trainers_list') }}" class="btn btn-secondary" style="flex: 1;">Cancel</a>
+          <button type="submit" class="btn btn-primary" style="flex: 2;">Update Trainer</button>
+        {% else %}
+          <button type="submit" class="btn btn-primary" style="width: 100%;">Register Trainer</button>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}Register Member | {{ gym_name }}{% endblock %}
+{% block page_title %}Enroll New Member{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto;">
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <h2 class="card-title">New Athlete Registration Form</h2>
+        <span style="font-size: 0.82rem; color: var(--muted);">ID will be auto-generated in the sequence (MEM-1001, MEM-1002...)</span>
+      </div>
+      <a href="{{ url_for('members_list') }}" class="btn btn-secondary btn-sm">&larr; Back to Members</a>
+    </div>
+
+    <form method="POST" action="{{ url_for('member_add') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="form-row">
+        <div class="form-group" style="grid-column: span 2;">
+          <label for="full_name" class="form-label">Full Name <span class="req">*</span></label>
+          <input 
+            type="text" 
+            id="full_name" 
+            name="full_name" 
+            class="form-control" 
+            placeholder="e.g. Rahul Sharma" 
+            required 
+            value="{{ form_data.get('full_name', '') }}"
+            autofocus
+          >
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="age" class="form-label">Age (12 to 90) <span class="req">*</span></label>
+          <input 
+            type="number" 
+            id="age" 
+            name="age" 
+            class="form-control" 
+            min="12" 
+            max="90" 
+            placeholder="e.g. 25" 
+            required 
+            value="{{ form_data.get('age', '') }}"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="gender" class="form-label">Gender <span class="req">*</span></label>
+          <select id="gender" name="gender" class="form-control" required>
+            <option value="">Select Gender</option>
+            <option value="Male" {% if form_data.get('gender') == 'Male' %}selected{% endif %}>Male</option>
+            <option value="Female" {% if form_data.get('gender') == 'Female' %}selected{% endif %}>Female</option>
+            <option value="Other" {% if form_data.get('gender') == 'Other' %}selected{% endif %}>Other</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="phone" class="form-label">Phone Number (10 Digits) <span class="req">*</span></label>
+          <input 
+            type="tel" 
+            id="phone" 
+            name="phone" 
+            class="form-control" 
+            pattern="[6-9][0-9]{9}" 
+            placeholder="e.g. 9822012345" 
+            required 
+            value="{{ form_data.get('phone', '') }}"
+          >
+          <div class="form-text">Standard 10-digit Indian mobile number starting with 6, 7, 8, or 9.</div>
+        </div>
+
+        <div class="form-group">
+          <label for="email" class="form-label">Email Address <span class="req">*</span></label>
+          <input 
+            type="email" 
+            id="email" 
+            name="email" 
+            class="form-control" 
+            placeholder="e.g. rahul.sharma@example.com" 
+            required 
+            value="{{ form_data.get('email', '') }}"
+          >
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="address" class="form-label">Residential Address <span class="req">*</span></label>
+        <textarea 
+          id="address" 
+          name="address" 
+          class="form-control" 
+          rows="2" 
+          placeholder="e.g. Flat 402, Rohan Nilay, Aundh, Pune - 411007" 
+          required
+        >{{ form_data.get('address', '') }}</textarea>
+      </div>
+
+      <div style="border-top: 1px solid var(--border); padding-top: 18px; margin-top: 10px;">
+        <h3 style="font-size: 1rem; margin-bottom: 14px; color: var(--accent);">Membership Package Details</h3>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="plan_id" class="form-label">Membership Plan <span class="req">*</span></label>
+            <select id="plan_id" name="plan_id" class="form-control" required>
+              <option value="">Select a Plan</option>
+              {% for p in plans %}
+                <option value="{{ p.id }}" {% if form_data.get('plan_id')|string == p.id|string %}selected{% endif %}>
+                  {{ p.plan_name }} ({{ p.duration_days }} Days - {{ p.price | format_currency }})
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="start_date" class="form-label">Membership Start Date <span class="req">*</span></label>
+            <input 
+              type="date" 
+              id="start_date" 
+              name="start_date" 
+              class="form-control" 
+              required 
+              value="{{ form_data.get('start_date', today_iso) }}"
+            >
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div class="alert alert-info" style="font-size: 0.85rem;">
+            ℹ Expiry date will be automatically computed server-side: <code>Start Date + Plan Duration (Days)</code>.
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
+        <a href="{{ url_for('members_list') }}" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-primary">Complete Registration</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

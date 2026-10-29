@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}Membership Plans | {{ gym_name }}{% endblock %}
+{% block page_title %}Membership Plans &amp; Packages{% endblock %}
+
+{% block content %}
+<div class="section-header">
+  <div>
+    <h2 class="section-title">Subscription Tiers &amp; Pricing</h2>
+    <p style="font-size: 0.85rem; color: var(--muted); margin-top: 2px;">
+      Configure membership durations, package benefits, and pricing structures.
+    </p>
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 360px; gap: 24px; align-items: flex-start;">
+  <!-- Left Side: Plans Table -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">Active Membership Plans</h3>
+      <span class="badge badge-info">{{ plans|length }} Active Tiers</span>
+    </div>
+
+    {% if plans %}
+      <div class="table-responsive" style="margin-bottom: 0;">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Plan Name</th>
+              <th>Duration</th>
+              <th>Fee (INR)</th>
+              <th>Enrolled Members</th>
+              <th>Description</th>
+              <th style="text-align: right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in plans %}
+              <tr>
+                <td>
+                  <strong style="color: #fff; font-size: 0.95rem;">{{ p.plan_name }}</strong>
+                </td>
+                <td><strong>{{ p.duration_days }}</strong> days</td>
+                <td>
+                  <span style="color: #4ade80; font-weight: 700; font-size: 0.95rem;">
+                    {{ p.price | format_currency }}
+                  </span>
+                </td>
+                <td>
+                  {% if p.member_count > 0 %}
+                    <span class="badge badge-active">{{ p.member_count }} athletes</span>
+                  {% else %}
+                    <span class="badge badge-warning">0 enrolled</span>
+                  {% endif %}
+                </td>
+                <td style="font-size: 0.8rem; color: var(--muted); max-width: 220px;">
+                  {{ p.description or 'Standard membership plan access.' }}
+                </td>
+                <td style="text-align: right;">
+                  <div class="table-actions" style="justify-content: flex-end;">
+                    <a href="{{ url_for('plan_edit', plan_id=p.id) }}" class="btn btn-secondary btn-sm" title="Edit Plan">
+                      Edit
+                    </a>
+                    {% if p.member_count == 0 %}
+                      <a href="{{ url_for('plan_delete_confirm', plan_id=p.id) }}" class="btn btn-danger btn-sm" title="Delete Plan">
+                        Delete
+                      </a>
+                    {% else %}
+                      <button class="btn btn-secondary btn-sm" disabled title="Cannot delete: {{ p.member_count }} active members enrolled in this plan" style="opacity: 0.4; cursor: not-allowed;">
+                        In Use
+                      </button>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <div class="empty-icon">📋</div>
+        <div class="empty-title">No Plans Configured</div>
+        <div class="empty-desc">Create your first membership plan using the form on the right.</div>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Right Side: Add / Edit Plan Form -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">
+        {% if editing_plan %}
+          Edit Plan: {{ editing_plan.plan_name }}
+        {% else %}
+          ➕ Add New Plan
+        {% endif %}
+      </h3>
+    </div>
+
+    <form method="POST" action="{% if editing_plan %}{{ url_for('plan_edit', plan_id=editing_plan.id) }}{% else %}{{ url_for('plan_add') }}{% endif %}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="form-group">
+        <label for="plan_name" class="form-label">Plan Name <span class="req">*</span></label>
+        <input 
+          type="text" 
+          id="plan_name" 
+          name="plan_name" 
+          class="form-control" 
+          placeholder="e.g. Semi-Annual Pro" 
+          required 
+          value="{% if editing_plan %}{{ editing_plan.plan_name }}{% else %}{{ form_data.get('plan_name', '') }}{% endif %}"
+        >
+      </div>
+
+      <div class="form-group">
+        <label for="duration_days" class="form-label">Duration (Days) <span class="req">*</span></label>
+        <input 
+          type="number" 
+          id="duration_days" 
+          name="duration_days" 
+          class="form-control" 
+          min="1" 
+          max="3650" 
+          placeholder="e.g. 180" 
+          required 
+          value="{% if editing_plan %}{{ editing_plan.duration_days }}{% else %}{{ form_data.get('duration_days', '') }}{% endif %}"
+        >
+      </div>
+
+      <div class="form-group">
+        <label for="price" class="form-label">Price (INR ₹) <span class="req">*</span></label>
+        <input 
+          type="number" 
+          id="price" 
+          name="price" 
+          class="form-control" 
+          step="0.01" 
+          min="0" 
+          placeholder="e.g. 6500.00" 
+          required 
+          value="{% if editing_plan %}{{ editing_plan.price }}{% else %}{{ form_data.get('price', '') }}{% endif %}"
+        >
+      </div>
+
+      <div class="form-group">
+        <label for="description" class="form-label">Package Description</label>
+        <textarea 
+          id="description" 
+          name="description" 
+          class="form-control" 
+          rows="3" 
+          placeholder="Facilities included, locker access, personal trainer sessions..."
+        >{% if editing_plan %}{{ editing_plan.description }}{% else %}{{ form_data.get('description', '') }}{% endif %}</textarea>
+      </div>
+
+      <div style="display: flex; gap: 10px; margin-top: 20px;">
+        {% if editing_plan %}
+          <a href="{{ url_for('plans_list') }}" class="btn btn-secondary" style="flex: 1;">Cancel</a>
+          <button type="submit" class="btn btn-primary" style="flex: 2;">Update Plan</button>
+        {% else %}
+          <button type="submit" class="btn btn-primary" style="width: 100%;">Create Plan</button>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

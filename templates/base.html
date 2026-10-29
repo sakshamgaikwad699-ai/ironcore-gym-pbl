@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>{% block title %}{{ gym_name }}{% endblock %} | Gym Management System</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <!-- CSS-Only Mobile Navigation Toggle -->
+  <input type="checkbox" id="sidebar-toggle" class="sidebar-toggle-checkbox">
+
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-icon">⚡</div>
+        <div class="brand-title">
+          {{ gym_name }}
+          <span>PBL Management</span>
+        </div>
+      </div>
+
+      <ul class="sidebar-nav">
+        <li class="nav-heading">Main Navigation</li>
+        <li>
+          <a href="{{ url_for('dashboard') }}" class="nav-link {% if active_page == 'dashboard' %}active{% endif %}">
+            <span class="nav-icon">📊</span>
+            <span>Dashboard</span>
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('members_list') }}" class="nav-link {% if active_page == 'members' %}active{% endif %}">
+            <span class="nav-icon">🏋️</span>
+            <span>Members</span>
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('plans_list') }}" class="nav-link {% if active_page == 'plans' %}active{% endif %}">
+            <span class="nav-icon">📋</span>
+            <span>Membership Plans</span>
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('trainers_list') }}" class="nav-link {% if active_page == 'trainers' %}active{% endif %}">
+            <span class="nav-icon">🥊</span>
+            <span>Trainers</span>
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('payments_list') }}" class="nav-link {% if active_page == 'payments' %}active{% endif %}">
+            <span class="nav-icon">💳</span>
+            <span>Payments</span>
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('attendance_view') }}" class="nav-link {% if active_page == 'attendance' %}active{% endif %}">
+            <span class="nav-icon">⏱️</span>
+            <span>Attendance</span>
+          </a>
+        </li>
+
+        <li class="nav-heading">Analytics & Config</li>
+        <li>
+          <a href="{{ url_for('reports_view') }}" class="nav-link {% if active_page == 'reports' %}active{% endif %}">
+            <span class="nav-icon">📈</span>
+            <span>Reports & Exports</span>
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('settings_view') }}" class="nav-link {% if active_page == 'settings' %}active{% endif %}">
+            <span class="nav-icon">⚙️</span>
+            <span>System Settings</span>
+          </a>
+        </li>
+      </ul>
+
+      <div class="sidebar-footer">
+        <div>SPPU B.Tech AI &amp; DS PBL</div>
+        <div style="margin-top: 4px; color: var(--accent); font-weight: 600;">Flask + SQLite + Pure CSS</div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="main-wrapper">
+      <!-- Sticky Topbar Header -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <label for="sidebar-toggle" class="sidebar-toggle-label" title="Toggle Navigation">☰</label>
+          <h1 class="page-title">{% block page_title %}Dashboard{% endblock %}</h1>
+        </div>
+
+        <div class="topbar-right">
+          <div class="admin-badge">
+            <div class="admin-avatar">{{ session.get('username', 'A')[0]|upper }}</div>
+            <span>{{ session.get('username', 'Admin') }}</span>
+          </div>
+          <a href="{{ url_for('logout') }}" class="btn btn-secondary btn-sm" title="Log Out">
+            <span>Log Out</span>
+          </a>
+        </div>
+      </header>
+
+      <!-- Page Body -->
+      <main class="page-content">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flash-container">
+              {% for category, message in messages %}
+                <div class="alert alert-{{ category if category != 'error' else 'danger' }}">
+                  <span>
+                    {% if category == 'success' %}✓
+                    {% elif category in ['danger', 'error'] %}✕
+                    {% elif category == 'warning' %}⚠
+                    {% else %}ℹ{% endif %}
+                  </span>
+                  <span>{{ message }}</span>
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        <!-- Child Page Content -->
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+</body>
+</html>

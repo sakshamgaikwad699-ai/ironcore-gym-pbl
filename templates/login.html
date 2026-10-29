@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Login | {{ gym_name }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="auth-wrapper">
+  <div class="auth-box">
+    <div class="auth-brand">
+      <div class="brand-icon">⚡</div>
+      <h1>{{ gym_name }}</h1>
+      <p>Administrative Portal &amp; Management Console</p>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-container">
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category if category != 'error' else 'danger' }}">
+              <span>{{ message }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('login') }}">
+      <!-- CSRF Protection Token -->
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      {% if next_url %}
+        <input type="hidden" name="next" value="{{ next_url }}">
+      {% endif %}
+
+      <div class="form-group">
+        <label for="username" class="form-label">Username <span class="req">*</span></label>
+        <input 
+          type="text" 
+          id="username" 
+          name="username" 
+          class="form-control" 
+          placeholder="Enter admin username" 
+          required 
+          autocomplete="username"
+          autofocus
+        >
+      </div>
+
+      <div class="form-group">
+        <label for="password" class="form-label">Password <span class="req">*</span></label>
+        <input 
+          type="password" 
+          id="password" 
+          name="password" 
+          class="form-control" 
+          placeholder="Enter account password" 
+          required 
+          autocomplete="current-password"
+        >
+      </div>
+
+      <div style="margin-top: 24px;">
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px;">
+          Secure Sign In
+        </button>
+      </div>
+    </form>
+
+    <div style="margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border); text-align: center; font-size: 0.8rem; color: var(--muted);">
+      <div>Default Credentials: <strong style="color: var(--text);">admin</strong> / <strong style="color: var(--text);">password123</strong></div>
+      <div style="margin-top: 4px;">Protected by rate-limiting &amp; cryptographic session cookies.</div>
+    </div>
+  </div>
+</body>
+</html>

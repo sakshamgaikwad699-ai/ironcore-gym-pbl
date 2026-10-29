@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Confirm Deletion | {{ gym_name }}{% endblock %}
+{% block page_title %}Confirm Permanent Deletion{% endblock %}
+
+{% block content %}
+<div class="confirm-box">
+  <div class="confirm-icon">⚠️</div>
+  <h2 style="font-size: 1.3rem; margin-bottom: 10px; color: var(--danger);">Are you absolutely sure?</h2>
+
+  <p style="font-size: 0.92rem; color: var(--text); margin-bottom: 12px;">
+    You are about to permanently delete <strong>{{ item_type }}</strong>:
+  </p>
+
+  <div style="background-color: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 18px; text-align: left;">
+    <div style="font-size: 0.8rem; color: var(--muted); text-transform: uppercase; font-weight: 700;">Record Identification</div>
+    <div style="font-size: 1.1rem; font-weight: 700; color: #fff; margin-top: 2px;">{{ item_name }}</div>
+    <div style="font-family: monospace; color: var(--accent); font-size: 0.88rem;">{{ item_id }}</div>
+    {% if extra_info %}
+      <div style="font-size: 0.82rem; color: var(--muted); margin-top: 6px;">{{ extra_info }}</div>
+    {% endif %}
+  </div>
+
+  {% if cascade_warning %}
+    <div class="alert alert-danger" style="text-align: left; font-size: 0.82rem; line-height: 1.4;">
+      <strong>⚠️ Database CASCADE Warning:</strong>
+      <p style="margin-top: 4px;">
+        Deleting this member will automatically cascade delete all associated <strong>fee payments</strong> and <strong>workout attendance records</strong> via SQLite foreign key rules (<code>ON DELETE CASCADE</code>).
+      </p>
+    </div>
+  {% endif %}
+
+  <div class="confirm-actions">
+    <a href="{{ cancel_url }}" class="btn btn-secondary">
+      Cancel &amp; Keep Record
+    </a>
+
+    <form method="POST" action="{{ delete_url }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-danger">
+        Yes, Permanently Delete
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}

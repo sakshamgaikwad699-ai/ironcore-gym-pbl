@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Receipt {{ payment.payment_id }} | {{ gym_name }}{% endblock %}
+{% block page_title %}Official Payment Receipt{% endblock %}
+
+{% block content %}
+<div class="print-notice">
+  <span>🖨️ <strong>Print or Save Receipt:</strong> Press <kbd>Ctrl + P</kbd> (Windows/Linux) or <kbd>Cmd + P</kbd> (Mac) to print this receipt or save as PDF.</span>
+  <a href="{{ url_for('payments_list') }}" class="btn btn-secondary btn-sm">&larr; Back to Payments</a>
+</div>
+
+<div class="receipt-container">
+  <div class="receipt-header">
+    <h1>{{ gym_name }}</h1>
+    <div style="font-size: 0.85rem; color: var(--muted); margin-top: 4px;">{{ gym_tagline }}</div>
+    <div style="font-size: 0.8rem; color: var(--muted); margin-top: 2px;">{{ gym_address }}</div>
+    <div style="font-size: 0.8rem; color: var(--muted);">Phone: {{ gym_phone }} | Email: {{ gym_email }}</div>
+  </div>
+
+  <div class="receipt-meta">
+    <div>
+      <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--muted); font-weight: 700;">Billed To</div>
+      <strong style="font-size: 1.05rem; color: var(--text);">{{ payment.full_name }}</strong>
+      <div style="font-family: monospace; color: var(--accent); font-weight: 600;">{{ payment.member_id }}</div>
+      <div style="font-size: 0.82rem; color: var(--muted);">{{ payment.phone }}</div>
+      <div style="font-size: 0.82rem; color: var(--muted);">{{ payment.email }}</div>
+    </div>
+
+    <div style="text-align: right;">
+      <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--muted); font-weight: 700;">Receipt No.</div>
+      <strong style="font-family: monospace; font-size: 1.15rem; color: var(--accent);">{{ payment.payment_id }}</strong>
+      <div style="font-size: 0.82rem; color: var(--muted); margin-top: 4px;">
+        Date: <strong style="color: var(--text);">{{ payment.payment_date | format_date }}</strong>
+      </div>
+      <div style="margin-top: 6px;">
+        {% if payment.status == 'Paid' %}
+          <span class="badge badge-paid">Status: Paid</span>
+        {% else %}
+          <span class="badge badge-pending">Status: Pending</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <table class="receipt-table">
+    <thead>
+      <tr>
+        <th>Description / Service</th>
+        <th>Duration</th>
+        <th>Payment Mode</th>
+        <th style="text-align: right;">Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>
+          <strong style="color: var(--text);">{{ payment.plan_name }}</strong>
+          <div style="font-size: 0.78rem; color: var(--muted);">Gym floor access, locker, cardio, weights</div>
+        </td>
+        <td>{{ payment.duration_days }} Days</td>
+        <td>{{ payment.payment_method }}</td>
+        <td style="text-align: right; font-weight: 600;">{{ payment.amount | format_currency }}</td>
+      </tr>
+      <tr class="total-row">
+        <td colspan="3" style="text-align: right;">Total Amount Received:</td>
+        <td style="text-align: right;">{{ payment.amount | format_currency }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="receipt-footer">
+    <p style="font-weight: 600; color: var(--text); margin-bottom: 4px;">Thank you for training with {{ gym_name }}!</p>
+    <p>This is a computer-generated official payment receipt. No physical signature is required.</p>
+    <p style="font-size: 0.75rem; margin-top: 8px;">Keep pushing your limits. Consistency creates champions.</p>
+  </div>
+</div>
+
+<div style="text-align: center; margin-top: 24px;" class="print-notice">
+  <a href="{{ url_for('payments_list') }}" class="btn btn-secondary">&larr; Return to Payment Ledger</a>
+  <a href="{{ url_for('member_details', member_id=payment.member_id) }}" class="btn btn-primary" style="margin-left: 10px;">View Member Profile &rarr;</a>
+</div>
+{% endblock %}

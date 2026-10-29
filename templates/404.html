@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}404 - Page Not Found | {{ gym_name }}{% endblock %}
+{% block page_title %}Resource Not Found{% endblock %}
+
+{% block content %}
+<div class="error-page">
+  <div class="error-code">404</div>
+  <h2 class="error-title">Page Not Found in Gym Facility</h2>
+  <p class="error-desc">
+    The gym resource, member record, or management page you requested does not exist or may have been relocated.
+  </p>
+  <div style="display: flex; justify-content: center; gap: 12px;">
+    <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
+      &larr; Return to Dashboard
+    </a>
+    <a href="{{ url_for('members_list') }}" class="btn btn-secondary">
+      View Members Directory
+    </a>
+  </div>
+</div>
+{% endblock %}
